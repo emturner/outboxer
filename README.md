@@ -65,3 +65,19 @@ And we initialise it:
 ```
 
 ### TODO deposit/transfer/withdraw args
+
+## Phoenix
+
+### COMMENT Getting started
+```sh
+  mix local.hex
+  mix archive.install hex phx_new
+
+  mix phx.new outboxer --live --no-ecto
+```
+
+```sh
+  cd outboxer
+
+  mix phx.server
+```
