@@ -48,3 +48,20 @@ docker exec tx_sandbox nairobibox smart_rollup_info
 # }
 ```
 
+## `tx-client`
+
+The `tx-client` is a cli for interacting with the deployed Tx Kernel.
+
+```sh
+TX_CONFIG=$(pwd)/.config/tx-client-nairobibox.json
+
+alias tx-client='../tx-client/target/debug/tx_kernel_client --config-file $TX_CONFIG'
+```
+
+And we initialise it:
+
+```shell
+. scripts/tx-client-setup.sh
+```
+
+### TODO deposit/transfer/withdraw args
