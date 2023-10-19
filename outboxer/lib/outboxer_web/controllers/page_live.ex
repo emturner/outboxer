@@ -2,7 +2,7 @@ defmodule OutboxerWeb.PageLive do
   use OutboxerWeb, :live_view
 
   def mount(_params, _conn, socket) do
-    socket = assign(socket, tezos_level: "", rollup_address: "")
+    socket = assign(socket, tezos_level: "", rollup_address: "", rollup_levels: %{})
     if connected?(socket) do
       Process.send_after(self(), :constants, 100)
       Process.send_after(self(), :rollup_address, 100)
@@ -16,6 +16,7 @@ defmodule OutboxerWeb.PageLive do
     socket = assign(socket, constants: proto_constants)
 
     Process.send_after(self(), :tezos_level, 100)
+    Process.send_after(self(), :rollup_level, 100)
 
     {:noreply, socket}
   end
@@ -25,6 +26,15 @@ defmodule OutboxerWeb.PageLive do
     level = tezos_level()
     socket = assign(socket, tezos_level: level)
     Process.send_after(self(), :tezos_level, block_time)
+
+    {:noreply, socket}
+  end
+
+  def handle_info(:rollup_level, socket) do
+    block_time = socket.assigns.constants.block_time_ms
+    levels = rollup_levels()
+    socket = assign(socket, rollup_levels: levels)
+    Process.send_after(self(), :rollup_level, block_time)
 
     {:noreply, socket}
   end
@@ -47,6 +57,14 @@ defmodule OutboxerWeb.PageLive do
     %HTTPoison.Response{body: body} = HTTPoison.get! "http://localhost:20000/chains/main/blocks/head-1/header/shell"
     %{"level" => level} = Poison.decode! body
     level
+  end
+
+  def rollup_levels() do
+    %HTTPoison.Response{body: body} = HTTPoison.get! "http://localhost:20010/global/block/finalized/state_current_level"
+    finalised = Poison.decode! body
+    %HTTPoison.Response{body: body} = HTTPoison.get! "http://localhost:20010/global/block/cemented/state_current_level"
+    cemented = Poison.decode! body
+    %{finalised: finalised, cemented: cemented}
   end
 
   def rollup_address() do
