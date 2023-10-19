@@ -16,5 +16,11 @@
     <p class="mt-4 text-base leading-7 text-zinc-600">
       Tracking L1@<%= @tezos_level %> | Rollup@<%= @rollup_levels[:finalised] %> | Cemented@<%= @rollup_levels[:cemented] %>
     </p>
+    <section>
+      <.table id="outbox_messages" rows={@outbox} >
+        <:col :let={{level, _}}, label="level"><%= level %></:col>
+        <:col :let={{_, messages}}, label="messages"><%= messages %></:col>
+      </.table>
+    </section>
   </div>
 </div>
