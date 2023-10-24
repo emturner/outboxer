@@ -43,14 +43,14 @@ defmodule OutboxerWeb.PageLive do
     {:noreply, socket}
   end
 
-  def new_outbox(outbox, messages), do: messages ++ outbox
-
   def handle_info(:rollup_address, socket) do
     address = rollup_address()
     socket = assign(socket, rollup_address: address)
 
     {:noreply, socket}
   end
+
+  def new_outbox(outbox, messages), do: messages ++ outbox
 
   def proto_constants() do
     %HTTPoison.Response{body: body} = HTTPoison.get! "http://localhost:20000/chains/main/blocks/head-1/context/constants"
