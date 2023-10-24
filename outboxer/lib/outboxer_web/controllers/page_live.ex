@@ -36,16 +36,14 @@ defmodule OutboxerWeb.PageLive do
     outbox = outbox_at(levels.finalised)
 
     socket = assign(socket, rollup_levels: levels,
-                            outbox: new_outbox(socket.assigns.outbox, levels.finalised, outbox))
+                            outbox: new_outbox(socket.assigns.outbox, outbox))
 
     Process.send_after(self(), :rollup_level, block_time)
 
     {:noreply, socket}
   end
 
-  def new_outbox([], level, messages), do: [{level, messages}]
-  def new_outbox([{prev, nil} | rest], level, messages), do: [{level, messages} | rest]
-  def new_outbox(outbox, level, messages), do: [{level, messages} | outbox]
+  def new_outbox(outbox, messages), do: messages ++ outbox
 
   def handle_info(:rollup_address, socket) do
     address = rollup_address()
@@ -77,8 +75,11 @@ defmodule OutboxerWeb.PageLive do
 
   def outbox_at(level) do
     %HTTPoison.Response{body: body} = HTTPoison.get! "http://localhost:20010/global/block/finalized/outbox/#{level}/messages"
-    messages = Poison.decode! body
-    if (not Enum.empty? messages), do: Poison.encode! messages
+    (Poison.decode! body)
+    |> Enum.map(fn %{"outbox_level" => l, "message_index" => i, "message" => %{"transactions" => t, "kind" => kind}} ->
+    {l, i, kind, Poison.encode! t} end)
+    |> Enum.to_list
+    |> Enum.sort_by(fn {_, i, _, _} -> i end)
   end
 
   def rollup_address() do
