@@ -22,7 +22,11 @@
         <:col :let={{_, i, _, _}}, label="index"><%= i %></:col>
         <:col :let={{_, _, k, _}}, label="kind"><%= k %></:col>
         <:col :let={{_, _, _, transactions}}, label="transactions"><%= transactions %></:col>
-        <:action :let={{l, _, _, _}}><%= if l <= @rollup_levels[:cemented], do: "Execute" %></:action>
+        <:action :let={{l, _, _, _}}>
+          <%= if l <= @rollup_levels[:cemented] do %>
+            <.button>Execute</.button>
+          <%= end %>
+        </:action>
       </.table>
     </section>
   </div>
