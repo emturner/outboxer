@@ -12,7 +12,11 @@ defmodule Outboxer.Application do
       {DNSCluster, query: Application.get_env(:outboxer, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Outboxer.PubSub},
       # Start the Finch HTTP client for sending emails
-      {Finch, name: Outboxer.Finch},
+      # {Finch, name: Outboxer.Finch},
+      # Initialise the constants agent
+      Outboxer.Core.Constants,
+      Outboxer.Core.Levels,
+      Outboxer.Core.Rollup,
       # Start a worker by calling: Outboxer.Worker.start_link(arg)
       # {Outboxer.Worker, arg},
       # Start to serve requests, typically the last entry
