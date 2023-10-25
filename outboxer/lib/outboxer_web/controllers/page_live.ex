@@ -16,6 +16,27 @@ defmodule OutboxerWeb.PageLive do
     {:ok, socket}
   end
 
+  ####################
+  # Execution handling
+  ####################
+  def handle_event("execute", %{"level" => level, "index" => index}, socket) do
+    IO.inspect "Execution requested for level #{level} and index #{index}"
+
+    proof = Outboxer.Rollup.proof(level, index)
+    Outboxer.Layer1.execute(Outboxer.Core.Rollup.address(), proof)
+
+    # TODO:
+    # - show reciepts on success; disable execute button
+    # - show error on failure; disable execute button if level expired
+
+    {:noreply, socket}
+  end
+
+  ###################
+  # TODO
+  # The code below is all handling business logic for updating backend state
+  # This should really live on the backed!!
+  ###################
   def handle_info(:constants, socket) do
     block_time = Outboxer.Core.Constants.get(:block_time_ms)
 

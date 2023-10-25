@@ -2,26 +2,27 @@ defmodule Outboxer.Layer1 do
   @node "http://localhost:20000"
 
   def level() do
-    %HTTPoison.Response{body: body} = fetch! "header/shell"
-    %{"level" => level} = Poison.decode! body
+    %{"level" => level} = fetch! "header/shell"
     level
   end
 
   def proto_constants() do
-    %HTTPoison.Response{body: body} = fetch! "context/constants"
-    %{"minimal_block_delay" => block_time} = Poison.decode! body
+    %{"minimal_block_delay" => block_time} = fetch! "context/constants"
     {block_time, _} = Integer.parse block_time
     %{block_time_ms: block_time * 1000}
   end
 
-  def outbox_at(level) do
-    %HTTPoison.Response{body: body} = HTTPoison.get! "http://localhost:20010/global/block/finalized/outbox/#{level}/messages"
-    (Poison.decode! body)
-    |> Enum.map(fn %{"outbox_level" => l, "message_index" => i, "message" => %{"transactions" => t, "kind" => kind}} ->
-    {l, i, kind, Poison.encode! t} end)
-    |> Enum.to_list
-    |> Enum.sort_by(fn {_, i, _, _} -> i end)
+  # TODO: calculate/lower bound on burn cap
+  def execute(rollup, %{"proof" => proof, "commitment_hash" => hash}) do
+    System.cmd("/home/emma/sources/outboxer/scripts/oclient.sh",
+      ["execute", "outbox", "message", "of", "smart", "rollup", rollup,
+        "from", "alice", "for", "commitment", "hash", hash,
+          "and", "output", "proof", proof, "--burn-cap", "1"])
+    |> IO.inspect
   end
 
-  def fetch!(rpc), do: HTTPoison.get! "#{@node}/chains/main/blocks/head-1/#{rpc}"
+  def fetch!(rpc) do
+    %HTTPoison.Response{body: body} = HTTPoison.get! "#{@node}/chains/main/blocks/head-1/#{rpc}"
+    Poison.decode! body
+  end
 end
