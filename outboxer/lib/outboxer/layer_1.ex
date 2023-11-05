@@ -24,6 +24,12 @@ defmodule Outboxer.Layer1 do
     |> IO.inspect
   end
 
+  def transcode_json_to_micheline(json) do
+    {res, 0} = System.cmd("/home/emma/sources/outboxer/scripts/oclient.sh",
+                          (["convert", "data", "#{Poison.encode! json}", "from", "JSON", "to", "michelson"] |> IO.inspect))
+    res
+  end
+
   def fetch!(rpc) do
     %HTTPoison.Response{body: body} = HTTPoison.get! "#{@node}/chains/main/blocks/head-1/#{rpc}"
     Poison.decode! body
