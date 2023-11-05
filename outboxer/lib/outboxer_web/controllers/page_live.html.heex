@@ -23,10 +23,17 @@
         <:col :let={{_, _, k, _}}, label="kind"><%= k %></:col>
         <:col :let={{_, _, _, transactions}}, label="transactions"><%= transactions %></:col>
         <:action :let={{l, i, _, _}}>
-          <%= if l <= @rollup_levels[:cemented] do %>
+          <%= cond do %>
+          <%= l < @rollup_levels[:cemented] - @constants.max_active_outbox_levels -> %>
+          <p color="red">Expired!</p>
+          <%= l <= @rollup_levels[:cemented] -> %>
           <.button phx-click="execute" phx-value-level={l} phx-value-index={i}>
             Execute
           </.button>
+          <%= true -> %>
+          <p>Waiting for cementation...
+            <!-- Execute in <%= l + @constants.max_active_outbox_levels - @rollup_levels[:cemented] %> -->
+          </p>
           <%= end %>
         </:action>
       </.table>

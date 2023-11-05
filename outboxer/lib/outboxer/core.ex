@@ -9,6 +9,10 @@ defmodule Outboxer.Core do
     def get(constant) do
       Agent.get(__MODULE__, &Map.get(&1, constant))
     end
+
+    def all() do
+      Agent.get(__MODULE__, &(&1))
+    end
   end
 
   defmodule Levels do

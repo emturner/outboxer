@@ -7,9 +7,12 @@ defmodule Outboxer.Layer1 do
   end
 
   def proto_constants() do
-    %{"minimal_block_delay" => block_time} = fetch! "context/constants"
-    {block_time, _} = Integer.parse block_time
-    %{block_time_ms: block_time * 1000}
+    %{"minimal_block_delay" => block_time,
+    "smart_rollup_max_active_outbox_levels" => max_active} = fetch! "context/constants"
+
+    {block_time, _} = Integer.parse(block_time)
+
+    %{block_time_ms: block_time * 1000, max_active_outbox_levels: max_active}
   end
 
   # TODO: calculate/lower bound on burn cap
