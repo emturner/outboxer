@@ -11,8 +11,7 @@ defmodule OutboxerWeb.PageLive do
                     constants: Outboxer.Core.Constants.all())
 
     if connected?(socket) do
-      Process.send_after(self(), :tezos_level, 100)
-      Process.send_after(self(), :rollup_level, 100)
+      Process.send_after(self(), :fetch, 100)
     end
 
     {:ok, socket}
@@ -34,36 +33,18 @@ defmodule OutboxerWeb.PageLive do
     {:noreply, socket}
   end
 
-  ###################
-  # TODO
-  # The code below is all handling business logic for updating backend state
-  # This should really live on the backed!!
-  ###################
-  def handle_info(:tezos_level, socket) do
+  def handle_info(:fetch, socket) do
     block_time = socket.assigns.constants.block_time_ms
-    level = Outboxer.Layer1.level()
-    Outboxer.Core.Levels.put(:layer1, level)
-    socket = assign(socket, tezos_level: level)
-    Process.send_after(self(), :tezos_level, block_time)
 
-    {:noreply, socket}
-  end
+    socket = assign(socket,
+                    tezos_level: Outboxer.Core.Levels.get(:layer1),
+                    rollup_levels: %{
+                      finalised: Outboxer.Core.Levels.get(:rollup),
+                      cemented: Outboxer.Core.Levels.get(:cemented)
+                    },
+                    outbox: Outboxer.Core.Rollup.messages())
 
-  def handle_info(:rollup_level, socket) do
-    block_time = socket.assigns.constants.block_time_ms
-    levels = Outboxer.Rollup.levels()
-    outbox = Outboxer.Rollup.outbox_at(levels.finalised)
-
-    Outboxer.Core.Rollup.add_messages(outbox)
-    Outboxer.Core.Levels.put(:finalised, levels[:finalised])
-    Outboxer.Core.Levels.put(:cemented, levels[:cemented])
-
-    socket = assign(socket, rollup_levels: levels,
-                            outbox: outbox ++ socket.assigns.outbox)
-
-
-    Process.send_after(self(), :rollup_level, block_time)
-
+    Process.send_after(self(), :fetch, block_time)
     {:noreply, socket}
   end
 end

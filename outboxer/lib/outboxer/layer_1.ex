@@ -24,6 +24,10 @@ defmodule Outboxer.Layer1 do
     |> IO.inspect
   end
 
+  # Option to get contract type with
+  # ./oclient get contract entrypoints for <KT1>
+  # And then normalize with
+  # ./oclient normalize data <data> of type <type> --unparsing_mode Readable
   def transcode_json_to_micheline(json) do
     {res, 0} = System.cmd("/home/emma/sources/outboxer/scripts/oclient.sh",
                           (["convert", "data", "#{Poison.encode! json}", "from", "JSON", "to", "michelson"] |> IO.inspect))

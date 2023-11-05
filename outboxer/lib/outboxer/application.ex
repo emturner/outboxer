@@ -17,6 +17,7 @@ defmodule Outboxer.Application do
       Outboxer.Core.Constants,
       Outboxer.Core.Levels,
       Outboxer.Core.Rollup,
+      Outboxer.Updates,
       # Start a worker by calling: Outboxer.Worker.start_link(arg)
       # {Outboxer.Worker, arg},
       # Start to serve requests, typically the last entry

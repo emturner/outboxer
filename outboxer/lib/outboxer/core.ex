@@ -19,8 +19,7 @@ defmodule Outboxer.Core do
     use Agent
 
     def start_link(_opts) do
-      Agent.start_link(fn -> %{layer1: nil, rollup: nil, cemented: nil} end,
-                       name: __MODULE__)
+      Agent.start_link(fn -> %{layer1: nil, rollup: nil, cemented: nil} end, name: __MODULE__)
     end
 
     def get(key), do: Agent.get(__MODULE__, &Map.get(&1, key))
