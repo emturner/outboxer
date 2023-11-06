@@ -14,7 +14,7 @@
       Indexing Smart Rollup outbox messages for <%= @rollup_address %>.
     </p>
     <p class="mt-4 text-base leading-7 text-zinc-600">
-      Tracking L1@<%= @tezos_level %> | Rollup@<%= @rollup_levels[:finalised] %> | Cemented@<%= @rollup_levels[:cemented] %>
+      Tracking L1@<%= @tezos_level %> | Rollup@<%= @rollup_finalised %> | Cemented@<%= @rollup_cemented %>
     </p>
     <section>
       <.table id="outbox_messages" rows={@outbox} >
@@ -30,9 +30,9 @@
         </:col>
         <:action :let={{l, i, _, _}}>
           <%= cond do %>
-          <%= @rollup_levels[:cemented] == nil or l > @rollup_levels[:cemented] -> %>
+          <%= @rollup_cemented == nil or l > @rollup_cemented -> %>
           <p>Waiting for cementation...</p>
-          <%= l < @rollup_levels[:cemented] - @constants.max_active_outbox_levels -> %>
+          <%= l < @rollup_cemented - @constants.max_active_outbox_levels -> %>
           <p color="red">Expired!</p>
           <%= true -> %>
           <.button phx-click="execute" phx-value-level={l} phx-value-index={i}>

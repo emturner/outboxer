@@ -1,17 +1,19 @@
 defmodule OutboxerWeb.PageLive do
   use OutboxerWeb, :live_view
+  alias Phoenix.PubSub
 
   def mount(_params, _conn, socket) do
     socket = assign(socket,
                     tezos_level: Outboxer.Core.Levels.get(:layer1),
                     rollup_address: Outboxer.Core.Rollup.address(),
-                    rollup_levels: %{finalised: Outboxer.Core.Levels.get(:finalised),
-                                     cemented: Outboxer.Core.Levels.get(:cemented)},
+                    rollup_finalised: Outboxer.Core.Levels.get(:finalised),
+                    rollup_cemented: Outboxer.Core.Levels.get(:cemented),
                     outbox: Outboxer.Core.Rollup.messages(),
                     constants: Outboxer.Core.Constants.all())
 
     if connected?(socket) do
-      Process.send_after(self(), :fetch, 100)
+      PubSub.subscribe(Outboxer.PubSub, "levels")
+      PubSub.subscribe(Outboxer.PubSub, "outbox")
     end
 
     {:ok, socket}
@@ -33,18 +35,17 @@ defmodule OutboxerWeb.PageLive do
     {:noreply, socket}
   end
 
-  def handle_info(:fetch, socket) do
-    block_time = socket.assigns.constants.block_time_ms
-
-    socket = assign(socket,
-                    tezos_level: Outboxer.Core.Levels.get(:layer1),
-                    rollup_levels: %{
-                      finalised: Outboxer.Core.Levels.get(:rollup),
-                      cemented: Outboxer.Core.Levels.get(:cemented)
-                    },
-                    outbox: Outboxer.Core.Rollup.messages())
-
-    Process.send_after(self(), :fetch, block_time)
-    {:noreply, socket}
+  def handle_info({:layer1, x}, socket) do
+    {:noreply, assign(socket, tezos_level: x)}
+  end
+  def handle_info({:rollup, x}, socket) do
+    {:noreply, assign(socket, rollup_finalised: x)}
+  end
+  def handle_info({:cemented, x}, socket) do
+    {:noreply, assign(socket, rollup_cemented: x)}
+  end
+  def handle_info({:outbox, []}, socket), do: {:noreply, socket}
+  def handle_info({:outbox, new_messages}, socket) do
+    {:noreply, assign(socket, outbox: new_messages ++ socket.assigns.outbox)}
   end
 end
