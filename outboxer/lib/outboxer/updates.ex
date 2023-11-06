@@ -39,7 +39,7 @@ defmodule Outboxer.Updates do
   def handle_info(:wait_for_rollup_level, state) when state.tezos_level > state.rollup_level do
     %{finalised: finalised, cemented: cemented} = Outboxer.Rollup.levels()
 
-    if cemented > state.rollup_cemented or state.rollup_cemented == nil do
+    if state.rollup_cemented == nil or cemented > state.rollup_cemented do
       Outboxer.Core.Levels.put(:cemented, cemented)
     end
 
