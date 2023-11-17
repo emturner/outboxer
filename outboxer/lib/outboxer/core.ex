@@ -4,19 +4,19 @@ defmodule Outboxer.Core do
     alias Phoenix.PubSub
 
     def start_link(_opts) do
-      Agent.start_link(fn -> %{rollup: nil, cemented: nil} end, name: __MODULE__)
+      Agent.start_link(fn -> %{"flextesa" => %{rollup: nil, cemented: nil}, "ghostnet" => %{rollup: nil, cemented: nil}} end, name: __MODULE__)
     end
 
-    def get(key), do: Agent.get(__MODULE__, &Map.get(&1, key))
+    def get(network, key), do: Agent.get(__MODULE__, &(&1[network][key]))
 
-    def put(key, value) do
+    def put(network, key, value) do
       if key == :layer1 do
-        Outboxer.Query.l1_set_finalised_level("flextesa", value)
+        Outboxer.Query.l1_set_finalised_level(network, value)
       else
-        Agent.update(__MODULE__, &Map.put(&1, key, value))
+        Agent.update(__MODULE__, &Map.put(&1, network, Map.put(&1[network], key, value)))
       end
 
-      PubSub.broadcast(Outboxer.PubSub, "levels", {key, value})
+      PubSub.broadcast(Outboxer.PubSub, "#{network}-levels", {key, value})
     end
   end
 
@@ -25,22 +25,25 @@ defmodule Outboxer.Core do
     alias Phoenix.PubSub
 
     def start_link(_opts) do
-      address = Outboxer.Rollup.address()
-      state = {address, []}
+      flex_nodes = Outboxer.Nodes.flextesa()
+      ghost_nodes = Outboxer.Nodes.ghostnet_etherlink()
+      flex_address = Outboxer.Rollup.address(flex_nodes)
+      eth_address = Outboxer.Rollup.address(ghost_nodes)
+      state = %{flex_nodes.network => {flex_address, []}, ghost_nodes.network => {eth_address, []}}
       Agent.start_link(fn -> state end, name: __MODULE__)
     end
 
-    def address() do
-      Agent.get(__MODULE__, fn {address, _} -> address end)
+    def address(network) do
+      Agent.get(__MODULE__, fn %{^network => {address, _}} -> address end)
     end
 
-    def messages() do
-      Agent.get(__MODULE__, fn {_, messages} -> messages end)
+    def messages(network) do
+      Agent.get(__MODULE__, fn %{^network => {_, messages}} -> messages end)
     end
 
-    def add_messages(messages) do
-      Agent.update(__MODULE__, fn {a, m} -> {a, messages ++ m} end)
-      PubSub.broadcast(Outboxer.PubSub, "outbox", {:outbox, messages})
+    def add_messages(network, messages) do
+      Agent.update(__MODULE__, fn %{^network => {address, m}} = state -> %{state | network => {address, messages ++ m}} end)
+      PubSub.broadcast(Outboxer.PubSub, "#{network}-outbox", {:outbox, messages})
     end
   end
 end

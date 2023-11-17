@@ -1,0 +1,41 @@
+<div class="">
+  <h1 class="text-[1.5rem] mt-10 flex items-center font-semibold leading-6">
+    Tezos Outboxer
+    <small class="text-[1rem] ml-3 rounded-full px-2 font-medium leading-6">
+      v0.0.1
+    </small>
+  </h1>
+  <p class="mt-4 text-base leading-7 text-zinc-600">
+    Indexing Smart Rollup outbox messages for
+    <text class="font-semibold"><%= @rollup_address %></text>.
+    <br /><br />
+    Tracking L1@<%= @tezos_level %> | Rollup@<%= @rollup_finalised %> | Cemented@<%= @rollup_cemented %>
+  </p>
+  <section>
+    <.table id="outbox_messages" rows={@outbox} >
+      <:col :let={{l, _, _, _}} label="level"><%= l %></:col>
+      <:col :let={{_, i, _, _}} label="index"><%= i %></:col>
+      <:col :let={{_, _, k, _}} label="kind"><%= k %></:col>
+      <:col :let={{_, _, _, transactions}} label="transactions">
+        <div :for={t <- transactions}>
+          <p>
+            Call <text class="font-semibold"><%= t.destination %></text> with <text class="font-semibold"><%= t.parameters %></text>
+          </p>
+        </div>
+      </:col>
+      <:action :let={{l, i, _, _}}>
+        <%= cond do %>
+        <%= @rollup_cemented == nil or l > @rollup_cemented -> %>
+        <p>Waiting for cementation...</p>
+        <%= l < @rollup_cemented - @max_active_outbox_levels -> %>
+        <p color="red">Expired!</p>
+        <%= true -> %>
+        <.button phx-click="execute" phx-value-level={l} phx-value-index={i} phx-target={@myself}>
+          Execute
+        </.button>
+        <%= true -> %>
+        <%= end %>
+      </:action>
+    </.table>
+  </section>
+</div>

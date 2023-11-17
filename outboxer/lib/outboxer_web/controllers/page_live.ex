@@ -1,45 +1,43 @@
 defmodule OutboxerWeb.PageLive do
   use OutboxerWeb, :live_view
   alias Phoenix.PubSub
-  alias Outboxer.Query
-
-  @network "flextesa"
-  @l1_fields [:finalised_level, :max_active_outbox_levels]
 
   def mount(_params, _conn, socket) do
-    l1 = Query.l1(@network, @l1_fields)
-
-    socket = assign(socket,
-                    tezos_level: l1.finalised_level,
-                    rollup_address: Outboxer.Core.Rollup.address(),
-                    rollup_finalised: Outboxer.Core.Levels.get(:finalised),
-                    rollup_cemented: Outboxer.Core.Levels.get(:cemented),
-                    outbox: Outboxer.Core.Rollup.messages(),
-                    max_active_outbox_levels: l1.max_active_outbox_levels)
+    network = "flextesa"
 
     if connected?(socket) do
-      PubSub.subscribe(Outboxer.PubSub, "levels")
-      PubSub.subscribe(Outboxer.PubSub, "outbox")
+      PubSub.subscribe(Outboxer.PubSub, "#{network}-levels")
+      PubSub.subscribe(Outboxer.PubSub, "#{network}-outbox")
     end
 
-    {:ok, socket}
+    {:ok, init(socket, network)}
   end
 
   ####################
-  # Execution handling
+  # Event handling
   ####################
-  def handle_event("execute", %{"level" => level, "index" => index}, socket) do
-    IO.inspect "Execution requested for level #{level} and index #{index}"
+  def handle_event("select-network", %{"network" => network}, socket) do
+    IO.inspect("switched network #{network}")
+    old_network = socket.assigns.network
 
-    proof = Outboxer.Rollup.proof(level, index)
-    Outboxer.Layer1.execute(Outboxer.Core.Rollup.address(), proof)
+    res = if network <> old_network do
+      PubSub.unsubscribe(Outboxer.PubSub, "#{old_network}-levels")
+      PubSub.unsubscribe(Outboxer.PubSub, "#{old_network}-outbox")
 
-    # TODO:
-    # - show reciepts on success; disable execute button
-    # - show error on failure; disable execute button if level expired
+      {:noreply, init(socket, network)}
+    else
+      {:noreply, socket}
+    end
 
-    {:noreply, socket}
+    PubSub.subscribe(Outboxer.PubSub, "#{network}-levels")
+    PubSub.subscribe(Outboxer.PubSub, "#{network}-outbox")
+
+    res
   end
+
+  ###############
+  # PubSub events
+  ###############
 
   def handle_info({:layer1, x}, socket) do
     {:noreply, assign(socket, tezos_level: x)}
@@ -53,5 +51,15 @@ defmodule OutboxerWeb.PageLive do
   def handle_info({:outbox, []}, socket), do: {:noreply, socket}
   def handle_info({:outbox, new_messages}, socket) do
     {:noreply, assign(socket, outbox: new_messages ++ socket.assigns.outbox)}
+  end
+
+  defp init(socket, network) do
+    assign(socket,
+           network: network,
+           tezos_level: Outboxer.Core.Levels.get(network, :layer1),
+           rollup_address: Outboxer.Core.Rollup.address(network),
+           rollup_finalised: Outboxer.Core.Levels.get(network, :rollup),
+           rollup_cemented: Outboxer.Core.Levels.get(network, :cemented),
+           outbox: Outboxer.Core.Rollup.messages(network))
   end
 end

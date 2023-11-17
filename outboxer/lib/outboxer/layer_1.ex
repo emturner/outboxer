@@ -1,14 +1,12 @@
 defmodule Outboxer.Layer1 do
-  @node "http://localhost:20000"
-
-  def level() do
-    %{"level" => level} = fetch! "header/shell"
+  def level(nodes) do
+    %{"level" => level} = fetch!(nodes, "header/shell")
     level
   end
 
-  def proto_constants() do
+  def proto_constants(nodes) do
     %{"minimal_block_delay" => block_time,
-    "smart_rollup_max_active_outbox_levels" => max_active} = fetch! "context/constants"
+    "smart_rollup_max_active_outbox_levels" => max_active} = fetch!(nodes, "context/constants")
 
     {block_time, _} = Integer.parse(block_time)
 
@@ -16,7 +14,8 @@ defmodule Outboxer.Layer1 do
   end
 
   # TODO: calculate/lower bound on burn cap
-  def execute(rollup, %{"proof" => proof, "commitment_hash" => hash}) do
+  # FIXME: XXX
+  def execute(_network, rollup, %{"proof" => proof, "commitment_hash" => hash}) do
     System.cmd("/home/emma/sources/outboxer/scripts/oclient.sh",
       ["execute", "outbox", "message", "of", "smart", "rollup", rollup,
         "from", "alice", "for", "commitment", "hash", hash,
@@ -34,8 +33,8 @@ defmodule Outboxer.Layer1 do
     res
   end
 
-  def fetch!(rpc) do
-    %HTTPoison.Response{body: body} = HTTPoison.get! "#{@node}/chains/main/blocks/head-1/#{rpc}"
+  defp fetch!(%Outboxer.Nodes{l1: node}, rpc) do
+    %HTTPoison.Response{body: body} = HTTPoison.get! "#{node}/chains/main/blocks/head-1/#{rpc}"
     Poison.decode! body
   end
 end

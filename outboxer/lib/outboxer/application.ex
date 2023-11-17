@@ -19,7 +19,12 @@ defmodule Outboxer.Application do
       # Core services
       Outboxer.Core.Levels,
       Outboxer.Core.Rollup,
-      Outboxer.Updates,
+      Supervisor.child_spec(
+        {Outboxer.Updates, name: :flextesa, nodes: Outboxer.Nodes.flextesa()},
+        id: :flextesa),
+      Supervisor.child_spec(
+        {Outboxer.Updates,  name: :ghostnet, nodes: Outboxer.Nodes.ghostnet_etherlink()},
+        id: :ghostnet),
       # Start a worker by calling: Outboxer.Worker.start_link(arg)
       # {Outboxer.Worker, arg},
       # Start to serve requests, typically the last entry
