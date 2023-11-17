@@ -14,7 +14,9 @@ defmodule Outboxer.Application do
       # Start the Finch HTTP client for sending emails
       # {Finch, name: Outboxer.Finch},
       # Initialise the constants agent
-      Outboxer.Core.Constants,
+      # Local database
+      Outboxer.Local.Repo,
+      # Core services
       Outboxer.Core.Levels,
       Outboxer.Core.Rollup,
       Outboxer.Updates,

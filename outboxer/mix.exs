@@ -49,7 +49,10 @@ defmodule Outboxer.MixProject do
       {:dns_cluster, "~> 0.1.1"},
       {:plug_cowboy, "~> 2.5"},
       {:httpoison, "~> 2.0"},
-      {:poison, "~> 5.0"}
+      {:poison, "~> 5.0"},
+      {:ecto_sql, "~> 3.11"},
+      {:postgrex, ">= 0.0.0"},
+      {:ecto, "~> 3.11"}
     ]
   end
 

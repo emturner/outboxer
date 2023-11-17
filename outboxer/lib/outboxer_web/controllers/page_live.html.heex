@@ -32,7 +32,7 @@
           <%= cond do %>
           <%= @rollup_cemented == nil or l > @rollup_cemented -> %>
           <p>Waiting for cementation...</p>
-          <%= l < @rollup_cemented - @constants.max_active_outbox_levels -> %>
+          <%= l < @rollup_cemented - @max_active_outbox_levels -> %>
           <p color="red">Expired!</p>
           <%= true -> %>
           <.button phx-click="execute" phx-value-level={l} phx-value-index={i}>

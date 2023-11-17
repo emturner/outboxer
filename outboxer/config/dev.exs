@@ -55,6 +55,9 @@ config :outboxer, OutboxerWeb.Endpoint,
 # Enable dev routes for dashboard and mailbox
 config :outboxer, dev_routes: true
 
+# Enable local network indexing when developing
+config :outboxer, ecto_repos: [Outboxer.Local.Repo]
+
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"
 

@@ -1,15 +1,21 @@
 defmodule OutboxerWeb.PageLive do
   use OutboxerWeb, :live_view
   alias Phoenix.PubSub
+  alias Outboxer.Query
+
+  @network "flextesa"
+  @l1_fields [:finalised_level, :max_active_outbox_levels]
 
   def mount(_params, _conn, socket) do
+    l1 = Query.l1(@network, @l1_fields)
+
     socket = assign(socket,
-                    tezos_level: Outboxer.Core.Levels.get(:layer1),
+                    tezos_level: l1.finalised_level,
                     rollup_address: Outboxer.Core.Rollup.address(),
                     rollup_finalised: Outboxer.Core.Levels.get(:finalised),
                     rollup_cemented: Outboxer.Core.Levels.get(:cemented),
                     outbox: Outboxer.Core.Rollup.messages(),
-                    constants: Outboxer.Core.Constants.all())
+                    max_active_outbox_levels: l1.max_active_outbox_levels)
 
     if connected?(socket) do
       PubSub.subscribe(Outboxer.PubSub, "levels")

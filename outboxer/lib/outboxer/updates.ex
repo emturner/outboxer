@@ -1,18 +1,29 @@
 defmodule Outboxer.Updates do
   use GenServer
 
-  def start_link(_opts) do
-    GenServer.start_link(__MODULE__, %{
-      tezos_level: Outboxer.Core.Levels.get(:layer1),
-      rollup_level: Outboxer.Core.Levels.get(:rollup),
-      rollup_cemented: Outboxer.Core.Levels.get(:cemented),
-      block_time_ms: Outboxer.Core.Constants.get(:block_time_ms)
-    })
+  @network "flextesa"
+  @l1_fields [:finalised_level, :minimal_block_delay]
+
+  def init(state) do
+    setup_l1_constants(@network)
+
+    %{finalised_level: tezos_level, minimal_block_delay: bt}
+                        = Outboxer.Query.l1(@network, @l1_fields)
+
+    state = %{ state | tezos_level: tezos_level, block_time_ms: bt}
+
+    fetch_next_tezos_level(bt)
+
+    {:ok, state}
   end
 
-  def init(%{block_time_ms: block_time_ms} = state) do
-    fetch_next_tezos_level(block_time_ms)
-    {:ok, state}
+  def start_link(_opts) do
+    GenServer.start_link(__MODULE__, %{
+      tezos_level: nil,
+      block_time_ms: nil,
+      rollup_level: Outboxer.Core.Levels.get(:rollup),
+      rollup_cemented: Outboxer.Core.Levels.get(:cemented),
+    })
   end
 
   def handle_info(:tezos_level, %{tezos_level: tezos_level, block_time_ms: block_time} = state) do
@@ -76,5 +87,15 @@ defmodule Outboxer.Updates do
 
   defp index_rollup_outbox_at(level) do
     send(self(), {:index_outbox, level})
+  end
+
+  defp setup_l1_constants(network) do
+    c = Outboxer.Layer1.proto_constants()
+
+    %Outboxer.Db.Layer1{network: network}
+    |> Outboxer.Db.Layer1.changeset(%{minimal_block_delay: c.block_time_ms,
+                                      max_active_outbox_levels: c.max_active_outbox_levels})
+    |> Outboxer.Local.Repo.insert_or_update
+    c
   end
 end

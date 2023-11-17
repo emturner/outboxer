@@ -7,6 +7,12 @@
 # General application configuration
 import Config
 
+config :outboxer, Outboxer.Local.Repo,
+  database: "outboxer_repo",
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost"
+
 config :outboxer,
   generators: [timestamp_type: :utc_datetime]
 
