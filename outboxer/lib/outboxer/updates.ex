@@ -9,7 +9,10 @@ defmodule Outboxer.Updates do
     %{finalised_level: tezos_level, minimal_block_delay: bt}
                         = Outboxer.Query.l1(state.nodes.network, @l1_fields)
 
-    state = %{ state | tezos_level: tezos_level, block_time_ms: bt}
+    state = %{ state | tezos_level: tezos_level, block_time_ms: bt,
+      # FIXME: should read from DB
+      rollup_level: tezos_level
+    }
 
     fetch_next_tezos_level(bt)
 
@@ -21,8 +24,8 @@ defmodule Outboxer.Updates do
       __MODULE__,
       %{tezos_level: nil,
         block_time_ms: nil,
-        rollup_level: Outboxer.Core.Levels.get(nodes.network, :rollup),
-        rollup_cemented: Outboxer.Core.Levels.get(nodes.network, :cemented),
+        rollup_level: nil,
+        rollup_cemented: nil,
         nodes: nodes},
       name: name)
   end
@@ -45,6 +48,11 @@ defmodule Outboxer.Updates do
   def handle_info(:wait_for_rollup_level, %{rollup_level: nil} = state) do
     # TODO: improve startup procedure
     %{finalised: finalised, cemented: cemented} = Outboxer.Rollup.levels(state.nodes)
+
+    for l <- cemented..finalised do
+      index_rollup_outbox_at(l)
+    end
+
     {:noreply, %{ state | rollup_level: finalised, rollup_cemented: cemented}}
   end
 
