@@ -2,17 +2,23 @@ defmodule Outboxer.Updates do
   use GenServer
 
   @l1_fields [:finalised_level, :minimal_block_delay]
+  @rollup_fields [:finalised_level, :cemented_level]
 
   def init(state) do
     setup_l1_constants(state.nodes)
+    address = setup_rollup(state.nodes)
 
     %{finalised_level: tezos_level, minimal_block_delay: bt}
                         = Outboxer.Query.l1(state.nodes.network, @l1_fields)
 
-    state = %{ state | tezos_level: tezos_level, block_time_ms: bt,
-      # FIXME: should read from DB
-      rollup_level: tezos_level
-    }
+    %{finalised_level: rollup_level, cemented_level: cemented_level}
+                        = Outboxer.Query.rollup(address, @rollup_fields)
+
+    state = %{ state | tezos_level: tezos_level,
+                       block_time_ms: bt,
+                       rollup_level: rollup_level,
+                       rollup_cemented: cemented_level,
+                       rollup_address: address}
 
     fetch_next_tezos_level(bt)
 
@@ -26,6 +32,7 @@ defmodule Outboxer.Updates do
         block_time_ms: nil,
         rollup_level: nil,
         rollup_cemented: nil,
+        rollup_address: nil,
         nodes: nodes},
       name: name)
   end
@@ -56,33 +63,35 @@ defmodule Outboxer.Updates do
     {:noreply, %{ state | rollup_level: finalised, rollup_cemented: cemented}}
   end
 
-  def handle_info(:wait_for_rollup_level, state) when state.tezos_level > state.rollup_level do
-    %{finalised: finalised, cemented: cemented} = Outboxer.Rollup.levels(state.nodes)
+  def handle_info(:wait_for_rollup_level, state) do
+    if state.tezos_level > state.rollup_level do
+      %{finalised: finalised, cemented: cemented} = Outboxer.Rollup.levels(state.nodes)
 
-    if state.rollup_cemented == nil or cemented > state.rollup_cemented do
-      Outboxer.Core.Levels.put(state.nodes.network, :cemented, cemented)
-    end
-
-    if finalised > state.rollup_level do
-      Outboxer.Core.Levels.put(state.nodes.network, :rollup, finalised)
-
-      for l <- (state.rollup_level + 1)..finalised do
-        index_rollup_outbox_at(l)
+      if state.rollup_cemented == nil or cemented > state.rollup_cemented do
+        Outboxer.Core.Levels.put(state.nodes.network, {state.rollup_address, :cemented}, cemented)
       end
-    end
 
-    {:noreply, %{state | rollup_cemented: cemented, rollup_level: finalised}}
+      if finalised > state.rollup_level do
+        Outboxer.Core.Levels.put(state.nodes.network, {state.rollup_address, :rollup}, finalised)
+
+        for l <- (state.rollup_level + 1)..finalised do
+          index_rollup_outbox_at(l)
+        end
+      end
+      {:noreply, %{state | rollup_cemented: cemented, rollup_level: finalised}}
+    else
+      {:noreply, state}
+    end
   end
 
   def handle_info({:index_outbox, level}, state) do
     outbox = Outboxer.Rollup.outbox_at(state.nodes, level)
     Outboxer.Core.Rollup.add_messages(state.nodes.network, outbox)
 
-    {:noreply, state}
-  end
+    for m <- outbox do
+      Outboxer.Query.rollup_set_outbox(state.rollup_address, m)
+    end
 
-  def handle_info(msg, state) do
-    IO.inspect({"UNHANDLED", msg, state})
     {:noreply, state}
   end
 
@@ -106,5 +115,15 @@ defmodule Outboxer.Updates do
                                       max_active_outbox_levels: c.max_active_outbox_levels})
     |> Outboxer.Local.Repo.insert_or_update
     c
+  end
+
+  defp setup_rollup(nodes) do
+    address = Outboxer.Rollup.address(nodes)
+
+    %Outboxer.Db.Rollup{address: address}
+    |> Outboxer.Db.Rollup.changeset(%{})
+    |> Outboxer.Local.Repo.insert_or_update
+
+    address
   end
 end

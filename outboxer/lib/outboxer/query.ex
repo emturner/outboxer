@@ -20,4 +20,49 @@ defmodule Outboxer.Query do
           select: ^fields)
     |> Outboxer.Local.Repo.one
   end
+
+  def rollup_finalised_level(address) do
+    (from rollup in Outboxer.Db.Rollup,
+      where: rollup.address == ^address,
+      select: rollup.finalised_level)
+    |> Outboxer.Local.Repo.one
+  end
+
+  def rollup_set_finalised_level(address, level) do
+    %Outboxer.Db.Rollup{address: address}
+    |> Outboxer.Db.Rollup.changeset(%{finalised_level: level})
+    |> Outboxer.Local.Repo.update
+  end
+
+  def rollup_cemented_level(address) do
+    (from rollup in Outboxer.Db.Rollup,
+      where: rollup.address == ^address,
+      select: rollup.cemented_level)
+    |> Outboxer.Local.Repo.one
+  end
+
+  def rollup_set_cemented_level(address, level) do
+    %Outboxer.Db.Rollup{address: address}
+    |> Outboxer.Db.Rollup.changeset(%{cemented_level: level})
+    |> Outboxer.Local.Repo.update
+  end
+
+  def rollup(address, fields) do
+    (from l1 in Outboxer.Db.Rollup,
+          where: l1.address == ^address,
+          select: ^fields)
+    |> Outboxer.Local.Repo.one
+  end
+
+  def rollup_set_outbox(address, {level, index, kind, contents}) do 
+    %Outboxer.Db.Outbox{
+      rollup: address,
+      level: level,
+      index: index,
+      kind: kind,
+      contents: Poison.encode! contents
+    }
+      |> IO.inspect
+    |> Outboxer.Local.Repo.insert
+  end
 end

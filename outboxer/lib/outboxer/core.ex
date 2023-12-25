@@ -10,13 +10,19 @@ defmodule Outboxer.Core do
     def get(network, key), do: Agent.get(__MODULE__, &(&1[network][key]))
 
     def put(network, key, value) do
-      if key == :layer1 do
-        Outboxer.Query.l1_set_finalised_level(network, value)
-      else
-        Agent.update(__MODULE__, &Map.put(&1, network, Map.put(&1[network], key, value)))
+      case key do
+        :layer1 ->
+          Outboxer.Query.l1_set_finalised_level(network, value)
+          PubSub.broadcast(Outboxer.PubSub, "#{network}-levels", {:layer1, value})
+        {address, :rollup} ->
+          Outboxer.Query.rollup_set_finalised_level(address, value)
+          Agent.update(__MODULE__, &Map.put(&1, network, Map.put(&1[network], :rollup, value)))
+          PubSub.broadcast(Outboxer.PubSub, "#{network}-levels", {:rollup, value})
+        {address, :cemented} ->
+          Outboxer.Query.rollup_set_cemented_level(address, value)
+          Agent.update(__MODULE__, &Map.put(&1, network, Map.put(&1[network], :cemented, value)))
+          PubSub.broadcast(Outboxer.PubSub, "#{network}-levels", {:cemented, value})
       end
-
-      PubSub.broadcast(Outboxer.PubSub, "#{network}-levels", {key, value})
     end
   end
 

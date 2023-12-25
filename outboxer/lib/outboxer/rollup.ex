@@ -12,7 +12,7 @@ defmodule Outboxer.Rollup do
   def outbox_at(nodes, level) do
     fetch!(nodes, "global/block/finalized/outbox/#{level}/messages")
     |> Enum.map(fn %{"outbox_level" => l, "message_index" => i, "message" => %{"transactions" => t, "kind" => kind}} ->
-    {l, i, kind, transcode t} end)
+    {l, String.to_integer(i), kind, transcode t} end)
     |> Enum.to_list
     |> Enum.sort_by(fn {_, i, _, _} -> i end)
   end
