@@ -2,6 +2,8 @@ defmodule OutboxerWeb.PageLive do
   use OutboxerWeb, :live_view
   alias Phoenix.PubSub
 
+  @rollup_fields [:finalised_level, :cemented_level]
+
   def mount(_params, _conn, socket) do
     network = "flextesa"
 
@@ -54,12 +56,29 @@ defmodule OutboxerWeb.PageLive do
   end
 
   defp init(socket, network) do
+    tl = Outboxer.Query.l1_finalised_level(network)
+    ra = address_from_network(network)
+    %Outboxer.Db.Rollup{finalised_level: fl, cemented_level: cl}
+                             = Outboxer.Query.rollup(ra, @rollup_fields)
+    outbox = ra
+    |> Outboxer.Query.rollup_outboxes
+    |> Enum.map(&to_display_outboxes/1)
+
     assign(socket,
            network: network,
-           tezos_level: Outboxer.Core.Levels.get(network, :layer1),
-           rollup_address: Outboxer.Core.Rollup.address(network),
-           rollup_finalised: Outboxer.Core.Levels.get(network, :rollup),
-           rollup_cemented: Outboxer.Core.Levels.get(network, :cemented),
-           outbox: Outboxer.Core.Rollup.messages(network))
+           tezos_level: tl,
+           rollup_address: ra,
+           rollup_finalised: fl,
+           rollup_cemented: cl,
+           outbox: outbox)
   end
+
+  defp to_display_outboxes(%Outboxer.Db.Outbox{level: l, index: i, kind: k, contents: c}) do
+    c = Poison.decode!(c)
+    {l, i, k, c}
+  end
+
+  # FIXME
+  defp address_from_network("flextesa"), do: "sr1HvQTFrxfiJNVmY98KvDGWvbouNrkU1kyP"
+  defp address_from_network("ghostnet"), do: "sr1HFDt5ZwBVcXTgLA4wQ9vtwMH7EKU5vMFr"
 end

@@ -62,7 +62,13 @@ defmodule Outboxer.Query do
       kind: kind,
       contents: Poison.encode! contents
     }
-      |> IO.inspect
     |> Outboxer.Local.Repo.insert
+  end
+
+  def rollup_outboxes(address) do
+    (from o in Outboxer.Db.Outbox,
+      where: o.rollup == ^address,
+      order_by: [desc: :level, desc: :index])
+    |> Outboxer.Local.Repo.all
   end
 end

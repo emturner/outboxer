@@ -19,7 +19,7 @@
       <:col :let={{_, _, _, transactions}} label="transactions">
         <div :for={t <- transactions}>
           <p>
-            Call <text class="font-semibold"><%= t.destination %></text> with <text class="font-semibold"><%= t.parameters %></text>
+            Call <text class="font-semibold"><%= t["destination"] %></text> with <text class="font-semibold"><%= t["parameters"] %></text>
           </p>
         </div>
       </:col>

@@ -17,8 +17,6 @@ defmodule Outboxer.Application do
       # Local database
       Outboxer.Local.Repo,
       # Core services
-      Outboxer.Core.Levels,
-      Outboxer.Core.Rollup,
       Supervisor.child_spec(
         {Outboxer.Updates, name: :flextesa, nodes: Outboxer.Nodes.flextesa()},
         id: :flextesa),

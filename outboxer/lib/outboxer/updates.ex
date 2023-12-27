@@ -41,7 +41,7 @@ defmodule Outboxer.Updates do
     level = Outboxer.Layer1.level(state.nodes)
 
     if level > tezos_level do
-      Outboxer.Core.Levels.put(state.nodes.network, :layer1, level)
+      Outboxer.Core.Levels.update(state.nodes.network, :layer1, level)
 
       index_rollup_at(level)
       fetch_next_tezos_level(block_time)
@@ -68,11 +68,11 @@ defmodule Outboxer.Updates do
       %{finalised: finalised, cemented: cemented} = Outboxer.Rollup.levels(state.nodes)
 
       if state.rollup_cemented == nil or cemented > state.rollup_cemented do
-        Outboxer.Core.Levels.put(state.nodes.network, {state.rollup_address, :cemented}, cemented)
+        Outboxer.Core.Levels.update(state.nodes.network, {state.rollup_address, :cemented}, cemented)
       end
 
       if finalised > state.rollup_level do
-        Outboxer.Core.Levels.put(state.nodes.network, {state.rollup_address, :rollup}, finalised)
+        Outboxer.Core.Levels.update(state.nodes.network, {state.rollup_address, :rollup}, finalised)
 
         for l <- (state.rollup_level + 1)..finalised do
           index_rollup_outbox_at(l)
@@ -87,10 +87,6 @@ defmodule Outboxer.Updates do
   def handle_info({:index_outbox, level}, state) do
     outbox = Outboxer.Rollup.outbox_at(state.nodes, level)
     Outboxer.Core.Rollup.add_messages(state.nodes.network, outbox)
-
-    for m <- outbox do
-      Outboxer.Query.rollup_set_outbox(state.rollup_address, m)
-    end
 
     {:noreply, state}
   end

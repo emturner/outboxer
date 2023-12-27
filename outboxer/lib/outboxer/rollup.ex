@@ -28,7 +28,7 @@ defmodule Outboxer.Rollup do
   def transcode([]), do: []
   def transcode([%{"parameters" => parameters, "destination" => destination} | rest]) do
     parameters = Outboxer.Layer1.transcode_json_to_micheline(parameters)
-    [%{destination: destination, parameters: parameters} | transcode(rest)]
+    [%{"destination" => destination, "parameters" => parameters} | transcode(rest)]
   end
   def transcode(batch), do: Poison.encode! batch
 
