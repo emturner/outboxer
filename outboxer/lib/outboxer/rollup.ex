@@ -9,12 +9,18 @@ defmodule Outboxer.Rollup do
     %{finalised: finalised, cemented: cemented}
   end
 
-  def outbox_at(nodes, level) do
+  def outbox_at(nodes, address, level) do
     fetch!(nodes, "global/block/finalized/outbox/#{level}/messages")
     |> Enum.map(fn %{"outbox_level" => l, "message_index" => i, "message" => %{"transactions" => t, "kind" => kind}} ->
-    {l, String.to_integer(i), kind, transcode t} end)
+      %Outboxer.Message{
+        rollup: address,
+        level: l,
+        index: String.to_integer(i),
+        kind: kind,
+        contents: transcode(t)
+      } end)
     |> Enum.to_list
-    |> Enum.sort_by(fn {_, i, _, _} -> i end)
+    |> Enum.sort_by(&(&1.index))
   end
 
   # FIXME: XXX
@@ -25,12 +31,12 @@ defmodule Outboxer.Rollup do
     Poison.decode! res
   end
 
-  def transcode([]), do: []
-  def transcode([%{"parameters" => parameters, "destination" => destination} | rest]) do
-    parameters = Outboxer.Layer1.transcode_json_to_micheline(parameters)
-    [%{"destination" => destination, "parameters" => parameters} | transcode(rest)]
+  def transcode(batch), do: batch |> Enum.map(&to_transfer/1)
+
+  defp to_transfer(%{"parameters" => p, "destination" => d}) do
+    p = Outboxer.Layer1.transcode_json_to_micheline(p)
+    %Outboxer.Message.Transfer{parameters: p, destination: d}
   end
-  def transcode(batch), do: Poison.encode! batch
 
   defp fetch!(%Outboxer.Nodes{rollup: node}, rpc) do
     %HTTPoison.Response{body: body} = HTTPoison.get! "#{node}/#{rpc}"

@@ -85,7 +85,7 @@ defmodule Outboxer.Updates do
   end
 
   def handle_info({:index_outbox, level}, state) do
-    outbox = Outboxer.Rollup.outbox_at(state.nodes, level)
+    outbox = Outboxer.Rollup.outbox_at(state.nodes, state.rollup_address, level)
     Outboxer.Core.Rollup.add_messages(state.nodes.network, outbox)
 
     {:noreply, state}

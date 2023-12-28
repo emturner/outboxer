@@ -21,16 +21,11 @@ defmodule Outboxer.Core do
     alias Phoenix.PubSub
 
     def add_messages(network, messages) do
-      address = address_from_network(network)
       for m <- messages do
-        Outboxer.Query.rollup_set_outbox(address, m)
+        Outboxer.Query.rollup_set_outbox(m)
       end
 
       PubSub.broadcast(Outboxer.PubSub, "#{network}-outbox", {:outbox, messages})
     end
-
-    # FIXME
-    defp address_from_network("flextesa"), do: "sr1HvQTFrxfiJNVmY98KvDGWvbouNrkU1kyP"
-    defp address_from_network("ghostnet"), do: "sr1HFDt5ZwBVcXTgLA4wQ9vtwMH7EKU5vMFr"
   end
 end

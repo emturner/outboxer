@@ -54,14 +54,9 @@ defmodule Outboxer.Query do
     |> Outboxer.Local.Repo.one
   end
 
-  def rollup_set_outbox(address, {level, index, kind, contents}) do 
-    %Outboxer.Db.Outbox{
-      rollup: address,
-      level: level,
-      index: index,
-      kind: kind,
-      contents: Poison.encode! contents
-    }
+  def rollup_set_outbox(%Outboxer.Message{} = message) do 
+    message
+    |> Outboxer.Message.to_db
     |> Outboxer.Local.Repo.insert
   end
 
@@ -70,5 +65,6 @@ defmodule Outboxer.Query do
       where: o.rollup == ^address,
       order_by: [desc: :level, desc: :index])
     |> Outboxer.Local.Repo.all
+    |> Enum.map(&Outboxer.Message.from_db/1)
   end
 end

@@ -60,9 +60,8 @@ defmodule OutboxerWeb.PageLive do
     ra = address_from_network(network)
     %Outboxer.Db.Rollup{finalised_level: fl, cemented_level: cl}
                              = Outboxer.Query.rollup(ra, @rollup_fields)
-    outbox = ra
-    |> Outboxer.Query.rollup_outboxes
-    |> Enum.map(&to_display_outboxes/1)
+
+    outbox = Outboxer.Query.rollup_outboxes(ra)
 
     assign(socket,
            network: network,
@@ -71,11 +70,6 @@ defmodule OutboxerWeb.PageLive do
            rollup_finalised: fl,
            rollup_cemented: cl,
            outbox: outbox)
-  end
-
-  defp to_display_outboxes(%Outboxer.Db.Outbox{level: l, index: i, kind: k, contents: c}) do
-    c = Poison.decode!(c)
-    {l, i, k, c}
   end
 
   # FIXME

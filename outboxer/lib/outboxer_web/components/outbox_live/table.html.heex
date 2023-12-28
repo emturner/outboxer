@@ -13,17 +13,17 @@
   </p>
   <section>
     <.table id="outbox_messages" rows={@outbox} >
-      <:col :let={{l, _, _, _}} label="level"><%= l %></:col>
-      <:col :let={{_, i, _, _}} label="index"><%= i %></:col>
-      <:col :let={{_, _, k, _}} label="kind"><%= k %></:col>
-      <:col :let={{_, _, _, transactions}} label="transactions">
+      <:col :let={%Outboxer.Message{level: l}} label="level"><%= l %></:col>
+      <:col :let={%Outboxer.Message{index: i}} label="index"><%= i %></:col>
+      <:col :let={%Outboxer.Message{kind: k}} label="kind"><%= k %></:col>
+      <:col :let={%Outboxer.Message{contents: transactions}} label="transactions">
         <div :for={t <- transactions}>
           <p>
-            Call <text class="font-semibold"><%= t["destination"] %></text> with <text class="font-semibold"><%= t["parameters"] %></text>
+            Call <text class="font-semibold"><%= t.destination %></text> with <text class="font-semibold"><%= t.parameters %></text>
           </p>
         </div>
       </:col>
-      <:action :let={{l, i, _, _}}>
+      <:action :let={%Outboxer.Message{level: l, index: i}}>
         <%= cond do %>
         <%= @rollup_cemented == nil or l > @rollup_cemented -> %>
         <p>Waiting for cementation...</p>
