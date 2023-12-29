@@ -55,6 +55,12 @@ defmodule OutboxerWeb.PageLive do
     {:noreply, assign(socket, outbox: new_messages ++ socket.assigns.outbox)}
   end
 
+  def handle_info({:executed, m}, socket) do
+    outbox = Enum.map(socket.assigns.outbox, fn k -> if k.id == m.id, do: m, else: k end)
+    socket = assign(socket, outbox: outbox)
+    {:noreply, socket}
+  end
+
   defp init(socket, network) do
     tl = Outboxer.Query.l1_finalised_level(network)
     ra = address_from_network(network)

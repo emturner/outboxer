@@ -30,12 +30,11 @@ defmodule OutboxerWeb.Components.OutboxLive.Table do
   def handle_event("execute", %{"level" => level, "index" => index}, socket) do
     IO.inspect "Execution requested for level #{level} and index #{index}"
 
-    proof = Outboxer.Rollup.proof(level, index)
-    Outboxer.Layer1.execute(socket.assigns.network, socket.assigns.rollup_address, proof)
+    m = Enum.find(socket.assigns.outbox,
+                  fn %{level: l, index: i} ->
+                    "#{l}" == level and "#{i}" == index end)
 
-    # TODO:
-    # - show reciepts on success; disable execute button
-    # - show error on failure; disable execute button if level expired
+    Outboxer.Core.Rollup.execute_message(socket.assigns.network, m)
 
     {:noreply, socket}
   end

@@ -17,7 +17,7 @@ defmodule Outboxer.Layer1 do
   # FIXME: XXX
   def execute(_network, rollup, %{"proof" => proof, "commitment_hash" => hash}) do
     System.cmd("/home/emma/sources/outboxer/scripts/oclient.sh",
-      ["execute", "outbox", "message", "of", "smart", "rollup", rollup,
+      ["--wait", "1", "execute", "outbox", "message", "of", "smart", "rollup", rollup,
         "from", "alice", "for", "commitment", "hash", hash,
           "and", "output", "proof", proof, "--burn-cap", "1"])
     |> IO.inspect

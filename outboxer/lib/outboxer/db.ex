@@ -40,8 +40,16 @@ defmodule Outboxer.Db do
       field :index, :integer 
       field :kind, :string
       field :contents, :string
+      field :executed, :boolean
+      field :op_hash, :string
 
       belongs_to :rollups, Outbox, foreign_key: :rollup, references: :address, type: :string
+    end
+
+    def changeset(%__MODULE__{} = id, params \\ %{}) do
+      id
+      |> Ecto.Changeset.cast(params, [:id, :executed, :op_hash])
+      |> IO.inspect
     end
   end
 end

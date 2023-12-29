@@ -58,13 +58,22 @@ defmodule Outboxer.Query do
     message
     |> Outboxer.Message.to_db
     |> Outboxer.Local.Repo.insert
+    |> (fn {:ok, %{id: id}} ->  %{ message | id: id} end).()
   end
 
   def rollup_outboxes(address) do
     (from o in Outboxer.Db.Outbox,
       where: o.rollup == ^address,
-      order_by: [desc: :level, desc: :index])
+      order_by: [desc: :level, desc: :index],
+      limit: 30)
     |> Outboxer.Local.Repo.all
     |> Enum.map(&Outboxer.Message.from_db/1)
+  end
+
+  def rollup_set_execution_status(%Outboxer.Message{id: id} = message) do
+    params = message |> Outboxer.Message.to_db |> Map.from_struct
+    %Outboxer.Db.Outbox{id: id}
+    |> Outboxer.Db.Outbox.changeset(params)
+    |> Outboxer.Local.Repo.update
   end
 end
