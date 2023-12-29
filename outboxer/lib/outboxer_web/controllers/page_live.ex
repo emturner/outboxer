@@ -5,7 +5,7 @@ defmodule OutboxerWeb.PageLive do
   @rollup_fields [:finalised_level, :cemented_level]
 
   def mount(_params, _conn, socket) do
-    network = "flextesa"
+    network = "ghostnet"
 
     if connected?(socket) do
       PubSub.subscribe(Outboxer.PubSub, "#{network}-levels")

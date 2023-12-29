@@ -29,7 +29,7 @@ defmodule Outboxer.Core do
 
     def execute_message(network, %Outboxer.Message{} = m) do
 
-      proof = Outboxer.Rollup.proof(m.level, m.index)
+      proof = Outboxer.Rollup.proof(network, m.level, m.index)
       res = Outboxer.Layer1.execute(network, m.rollup, proof)
 
       m = case res do

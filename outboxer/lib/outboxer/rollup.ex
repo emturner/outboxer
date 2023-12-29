@@ -23,10 +23,25 @@ defmodule Outboxer.Rollup do
     |> Enum.sort_by(&(&1.index))
   end
 
-  # FIXME: XXX
-  def proof(level, index) do
+  def proof("flextesa", level, index) do
     {res, 0} = System.cmd("/home/emma/sources/outboxer/scripts/srclient.sh",
-               ["get", "proof", "for", "message", "#{index}", "of", "outbox", "at", "level", "#{level}"])
+                          ["get", "proof", "for", "message", "#{index}", "of", "outbox",
+                           "at", "level", "#{level}"])
+
+    Poison.decode! res
+  end
+
+  def proof("ghostnet", level, index) do
+    # nodes = Outboxer.Nodes.ghostnet_etherlink()
+    # res = fetch!(nodes, "global/block/head/helpers/proofs/outbox/#{level}/messages?index=#{index}")
+    # |> IO.inspect
+    # res = Poison.decode! res
+    # |> IO.inspect
+    # %{ res | proof: "0x" <> res.proof }
+
+    {res, 0} = System.cmd("/home/emma/sources/outboxer/scripts/ghost-srclient.sh",
+                          ["get", "proof", "for", "message", "#{index}", "of", "outbox",
+                           "at", "level", "#{level}"])
 
     Poison.decode! res
   end

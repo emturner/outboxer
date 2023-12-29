@@ -15,10 +15,18 @@ defmodule Outboxer.Layer1 do
 
   # TODO: calculate/lower bound on burn cap
   # FIXME: XXX
-  def execute(_network, rollup, %{"proof" => proof, "commitment_hash" => hash}) do
+  def execute("flextesa", rollup, %{"proof" => proof, "commitment_hash" => hash}) do
     System.cmd("/home/emma/sources/outboxer/scripts/oclient.sh",
       ["--wait", "1", "execute", "outbox", "message", "of", "smart", "rollup", rollup,
         "from", "alice", "for", "commitment", "hash", hash,
+          "and", "output", "proof", proof, "--burn-cap", "1"])
+    |> IO.inspect
+  end
+
+  def execute("ghostnet", rollup, %{"proof" => proof, "commitment_hash" => hash}) do
+    System.cmd("/home/emma/sources/outboxer/scripts/gclient.sh",
+      ["--wait", "1", "execute", "outbox", "message", "of", "smart", "rollup", rollup,
+        "from", "outboxer", "for", "commitment", "hash", hash,
           "and", "output", "proof", proof, "--burn-cap", "1"])
     |> IO.inspect
   end

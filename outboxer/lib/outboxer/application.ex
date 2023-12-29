@@ -17,9 +17,9 @@ defmodule Outboxer.Application do
       # Local database
       Outboxer.Local.Repo,
       # Core services
-      Supervisor.child_spec(
-        {Outboxer.Updates, name: :flextesa, nodes: Outboxer.Nodes.flextesa()},
-        id: :flextesa),
+#      Supervisor.child_spec(
+#        {Outboxer.Updates, name: :flextesa, nodes: Outboxer.Nodes.flextesa()},
+#        id: :flextesa),
       Supervisor.child_spec(
         {Outboxer.Updates,  name: :ghostnet, nodes: Outboxer.Nodes.ghostnet_etherlink()},
         id: :ghostnet),
